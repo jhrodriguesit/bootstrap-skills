@@ -31,6 +31,12 @@ npx skills add jhrodriguesit/bootstrap-skills
 
 Then in your agent (Claude Code, Codex, OpenCode, etc.):
 
+For claude code you can run:
+
+```bash
+npx skills add jhrodriguesit/bootstrap-skills --agent claude-code 
+```
+
 ```
 /bootstrap-skills
 ```
