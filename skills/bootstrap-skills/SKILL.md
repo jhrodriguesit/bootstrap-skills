@@ -13,10 +13,10 @@ This skill is **proactive** — it asks what the project needs at setup time, ra
 
 Read these before starting the interview. They govern every decision below.
 
-1. **Detect before asking.** Look at the repo first. If `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, etc. exist, read them. Skip questions the files already answer. Confirm assumptions rather than asking blind.
+1. **Detect before asking factual stack questions.** Look at the repo first (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, etc.). The repo scan only answers *factual* questions like "what framework is this?" — it never answers *preference* questions like "how do you want the agent to behave?" or "do you want testing skills?" Always ask preference questions, even when the repo is fully detected. Confirm stack assumptions rather than asking blind.
 2. **One question at a time.** Wait for the answer. Never bundle multiple questions in one turn.
 3. **Always offer a recommended answer.** Based on what's in the repo and what's been said so far. Make the user's job to confirm or correct, not to think from scratch.
-4. **Skip irrelevant sections entirely.** If the user says "this is a docs-only repo," skip the testing, frontend, and backend sections. Don't ask questions whose answers don't fork the output.
+4. **Skip sections only when they truly don't apply.** "Docs-only repo" skips frontend, backend, data. "No tests planned" skips testing. But never skip Section 2 (working style) — preferences always need to be asked. When in doubt, ask the section's question rather than guessing.
 5. **Keep the running tally visible.** After each section, show a one-line summary of what's been picked.
 6. **Cap the structured interview at ~6 questions.** After the structured sections, always offer one open-ended "anything else?" question (Section 5.5) as an escape hatch for niche needs. Don't expand the structured sections beyond 6.
 7. **Never install without confirmation.** Show the final list, get explicit yes, then install.
@@ -102,45 +102,56 @@ After confirmation, run `npx skills add <repo> --skill <name>` (no `-g` flag) fo
 
 ## Search strategy
 
-For each section the user opts into, run one targeted search against skills.sh. Use `npx skills find <keywords>` from the terminal first; if that fails or returns nothing useful, fall back to a web search for `site:skills.sh <keywords>`.
+For each section the user opts into, search skills.sh and **verify install counts before recommending**. Default trust in CLI ordering is wrong — the CLI does not necessarily return results ranked by installs.
+
+**Two-step process, do both:**
+
+1. **Run the search to get candidates.** Use `npx skills find <keywords>`. Take the top ~5 results, not just the first.
+2. **Verify install counts and reputation on skills.sh.** For each candidate, fetch its skills.sh page (e.g. `https://www.skills.sh/<owner>/<repo>/<skill>`) or run a web search like `site:skills.sh <skill-name>` to see the actual install count, GitHub stars, and source. CLI output alone is not enough.
+
+Only after both steps, pick a winner. If a candidate looks promising but you can't verify its metrics, say so to the user rather than guessing.
+
+**Sanity check — known popular sources.** Before finalizing, ask yourself: is there a well-known skill from a reputable source that the CLI didn't surface? For example: Matt Pocock's `mattpocock/skills` (engineering & productivity, ~84k stars), Anthropic's official skills, Vercel Labs' `vercel-labs/skills` and `vercel-labs/agent-skills`, framework-team skills (Angular, Next.js, etc.). If the top CLI result has 41 installs and you haven't checked these known sources, **check them explicitly**. A search like `npx skills find mattpocock tdd` or fetching `https://www.skills.sh/mattpocock/skills/tdd` will surface the popular alternative.
 
 Suggested query templates (refine based on the user's actual answers):
 
-| Section | Pick | Search keywords |
-|---|---|---|
-| Working style | Plan before coding | `grill plan design interview` |
-| Working style | Compressed responses | `compressed terse minimal tokens` |
-| Working style | Disciplined testing | `tdd red green refactor` |
-| Working style | Disciplined debugging | `debug diagnosis loop bug` |
-| Frontend | React | `react component design` |
-| Frontend | Vue | `vue component` |
-| Frontend | Svelte | `svelte` |
-| Frontend | Generic UI | `frontend design accessibility` |
-| Backend | Node/TS API | `express fastify node api` |
-| Backend | Python API | `fastapi django python api` |
-| Backend | Rust | `rust axum api` |
-| Data | Postgres | `postgres sql schema` |
-| Data | Mongo | `mongo document` |
-| Data | Redis | `redis cache` |
-| Ops | Docker | `docker container` |
-| Ops | CI | `github actions ci` |
-| Ops | Vercel | `vercel deployment` |
+| Section | Pick | Search keywords | Known popular source to check |
+|---|---|---|---|
+| Working style | Plan before coding | `grill plan design interview` | `mattpocock/skills/grill-me` |
+| Working style | Compressed responses | `compressed terse minimal tokens` | `mattpocock/skills/caveman` |
+| Working style | Disciplined testing | `tdd red green refactor` | `mattpocock/skills/tdd` |
+| Working style | Disciplined debugging | `debug diagnosis loop bug` | `mattpocock/skills/diagnose` |
+| Frontend | React | `react component design` | `anthropics/skills/frontend-design`, `vercel-labs/agent-skills` |
+| Frontend | Vue | `vue component` | — |
+| Frontend | Svelte | `svelte` | — |
+| Frontend | Generic UI | `frontend design accessibility` | `anthropics/skills/frontend-design` |
+| Backend | Node/TS API | `express fastify node api` | `vercel-labs/agent-skills` |
+| Backend | Python API | `fastapi django python api` | — |
+| Backend | Rust | `rust axum api` | — |
+| Data | Postgres | `postgres sql schema` | — |
+| Data | Mongo | `mongo document` | — |
+| Data | Redis | `redis cache` | — |
+| Ops | Docker | `docker container` | — |
+| Ops | CI | `github actions ci` | — |
+| Ops | Vercel | `vercel deployment` | `vercel-labs/agent-skills` |
 
-Treat these as starting points, not rigid mappings. If the user said something specific ("we use Drizzle"), search for that directly.
+Treat these as starting points. If the user said something specific ("we use Drizzle"), search for that directly. The "known popular source" column is a backstop, not a prescription — verify the metrics, and only pick it if it actually fits and ranks well.
 
 ## Ranking
 
-Once a search returns candidates, score them roughly as:
+After you have **verified install counts and stars** for the top candidates (not just the CLI output), score them:
 
-1. **Install count** — primary signal. >10k installs is strong; <100 is weak.
-2. **GitHub stars on the source repo** — secondary signal.
+1. **Install count** — primary signal. >10k installs is strong; 1k-10k is solid; 100-1k is plausible; <100 is weak and needs a strong secondary signal.
+2. **GitHub stars on the source repo** — secondary signal. A skill in a 50k-star repo from a known author beats an unknown 100-install standalone.
 3. **Source reputation** — official authors (Anthropic, Vercel Labs, framework teams) get a boost.
 4. **Recency** — skills updated in the last 6 months beat stale ones, all else equal.
-5. **Description fit** — does the skill description actually match what we want, or is it tangentially related?
+5. **Description fit** — does the skill description actually match what we want, or is it tangentially related? A weak fit with high installs is worse than a strong fit with moderate installs.
 
 Pick the top-ranked candidate per category. Don't install multiple skills for the same job — one well-chosen skill per concern.
 
-If the top candidate has fewer than 50 installs and no clear reputational signal, flag it: *"The best match for [category] is new and unproven. Install anyway, skip it, or want me to look at alternatives?"*
+**Hard rule:** If the top candidate has fewer than 100 installs **and** you haven't checked the "known popular source" column for that category, go check before recommending. Don't ship a 41-install pick when a 30k-install alternative exists one search away.
+
+If after checking, the top candidate still has fewer than 100 installs and no clear reputational signal, flag it: *"The best match for [category] is new and unproven ([N] installs). Install anyway, skip it, or want me to look at alternatives?"*
 
 ## Notes for Claude running this skill
 
