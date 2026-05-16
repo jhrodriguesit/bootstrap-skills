@@ -107,7 +107,63 @@ Present the final list to the user:
 >
 > Confirm to install, or tell me what to swap."
 
-After confirmation, run `npx skills add <repo> --skill <name>` (no `-g` flag) for each one. Report what was installed and any follow-up the user should know about.
+After confirmation, detect the current agent and install accordingly (see "Agent detection" below). Report what was installed and any follow-up the user should know about.
+
+## Agent detection
+
+Before running any `npx skills add` command, detect which agent is running. Use this to set the correct `-a <agent>` flag so skills always land in the right folder.
+
+**Detection order — check these in sequence, stop at the first match:**
+
+1. Check for agent config directories in the project root:
+   - `.claude/` → `claude-code`
+   - `.codex/` → `codex`
+   - `.cursor/` → `cursor`
+   - `.opencode/` → `opencode`
+   - `.gemini/` → `gemini-cli`
+   - `.github/copilot/` → `github-copilot`
+   - `.cline/` → `cline`
+   - `.continue/` → `continue`
+   - `.windsurf/` → `windsurf`
+   - `.kiro/` → `kiro-cli`
+2. Check environment variables: `CLAUDE_CODE`, `CODEX`, `CURSOR_TRACE`, `OPENCODE` if present.
+3. If still unsure, ask once: *"Which agent are you using? (e.g. Claude Code, Codex, Cursor, OpenCode)"* and map the answer using the table above.
+
+**Install command pattern once the agent is known:**
+
+```bash
+npx skills add <repo> --skill <name> -a <agent-flag> -y
+```
+
+For example, if Claude Code is detected:
+```bash
+npx skills add mattpocock/skills --skill tdd -a claude-code -y
+```
+
+If running in Cursor:
+```bash
+npx skills add mattpocock/skills --skill tdd -a cursor -y
+```
+
+The `-y` flag skips any remaining interactive prompts so installs don't stall mid-session.
+
+**Full agent flag reference:**
+
+| Agent | Flag |
+|---|---|
+| Claude Code | `claude-code` |
+| Codex | `codex` |
+| Cursor | `cursor` |
+| OpenCode | `opencode` |
+| Gemini CLI | `gemini-cli` |
+| GitHub Copilot | `github-copilot` |
+| Cline | `cline` |
+| Continue | `continue` |
+| Windsurf | `windsurf` |
+| Kiro CLI | `kiro-cli` |
+| Goose | `goose` |
+| Roo Code | `roo` |
+| Amp | `amp` |
 
 ### Section 7 — How to use these skills (offer after install)
 
@@ -204,7 +260,7 @@ If after sanity-checking, the top candidate still has fewer than 100 installs an
 - **The interview is the product.** Don't pad it. A user with a clear project should be done in under 2 minutes (excluding any "anything else?" rounds the user chooses to extend).
 - **Show your work on rankings.** When picking between candidates, briefly say why (e.g. "Picked X over Y because 30k vs 800 installs and X is from the framework team").
 - **Respect existing installs.** Before installing, run `npx skills list` to see what's already there. Don't reinstall, don't override user-edited skills without asking.
-- **Project-scoped only.** All `npx skills add` commands run without `-g`. Skills land in `./.claude/skills/` and are committable with the project.
+- **Always detect the agent before installing.** Use the "Agent detection" section to determine the correct `-a <flag>` before running any `npx skills add`. Never omit `-a` — without it the CLI defaults to `.agents/` regardless of which agent is actually running. Always include `-y` to suppress interactive prompts.
 - **Loop "anything else?" until the user opts out.** Don't ask once and move on — keep offering until they say they're done.
 - **Always offer the usage guide.** After install, ask if the user wants a HOW_TO_USE.md generated. It's a small step that makes the installed skills discoverable to the team.
 - **One-off discovery is fine mid-interview.** If the user asks "is there a skill for X" mid-flow, run a quick `npx skills find` for that, answer briefly, then resume the interview where you left off.
@@ -265,8 +321,9 @@ Claude: Here's the plan — all installed into ./.claude/skills/:
 
 User: Confirm.
 
-Claude: [runs npx skills add for each without -g, reports results]
-        Done — 7 skills installed.
+Claude: [detects .claude/ directory → agent is claude-code]
+        [runs npx skills add <repo> --skill <name> -a claude-code -y for each]
+        Done — 7 skills installed into .claude/skills/.
         Want me to drop a quick 'How to use these skills' guide
         into the repo?
 
