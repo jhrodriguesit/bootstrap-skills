@@ -69,17 +69,26 @@ Only ask if the user explicitly mentioned deployment, infra, or CI in Section 1.
 
 If asked: *"Any deployment or CI specifics worth installing skills for? (e.g. Vercel, Docker, GitHub Actions, none)"*
 
-### Section 5.5 — Anything else? (always ask, open-ended)
+### Section 5.5 — Anything else? (loop until user opts out)
 
-Before showing the final tally, give the user one chance to add anything the structured sections missed.
+Before showing the final tally, give the user repeated chances to add anything the structured sections missed. This is a loop, not a single ask.
 
-Ask: *"Before I show you the final list — anything specific you want skills for that I didn't cover? (e.g. a particular library, a workflow, or 'no')"*
+**First time, ask:** *"Before I show you the final list — anything specific you want skills for that I didn't cover? (e.g. a particular library, a workflow, or 'no')"*
 
-Treat this as free-form, not a multiple-choice. If the user mentions something concrete (e.g. "Drizzle migrations", "writing ADRs", "OpenAPI specs"), search skills.sh for it and add the best match to the tally. If they say "no" or similar, move straight to confirmation.
+**After each item they add, ask again:** *"Anything else, or are we good?"*
 
-If they mention multiple things, handle them one at a time and surface what you found for each before adding.
+Continue looping until the user signals they're done with phrases like "no", "that's all", "we're good", "nothing else", "done". Then move to Section 6.
 
-This is the escape hatch for niche needs. Keep it light — don't turn it into a second interview. If the user starts listing many things, stop after a couple and suggest running `/bootstrap-skills` again later for the rest, or using `find-skills` for one-offs.
+For each item the user mentions:
+1. Search skills.sh for it using the bare-topic approach (Search Strategy above).
+2. Verify install counts.
+3. Briefly tell the user what you found — name, source, install count, one-line fit — before adding to the tally.
+4. If you can't find a good match, say so honestly. Don't add a low-quality skill just to satisfy the request.
+
+**Guardrails:**
+- If the user is on a roll listing many things (5+ items), pause and ask: *"Want to keep going, or save the rest for another run?"* The interview shouldn't balloon indefinitely.
+- If a user-suggested item duplicates something already in the tally, point that out instead of adding a second one.
+- Treat ambiguous answers ("maybe", "I dunno", "what would you recommend?") as a request for help, not as "yes" or "no". Ask a clarifying follow-up or suggest a specific skill they can accept or reject.
 
 ### Section 6 — Confirm and install (always run)
 
@@ -100,66 +109,105 @@ Present the final list to the user:
 
 After confirmation, run `npx skills add <repo> --skill <name>` (no `-g` flag) for each one. Report what was installed and any follow-up the user should know about.
 
+### Section 7 — How to use these skills (offer after install)
+
+After successful install, offer to generate a short usage guide so the user knows what they just got and how to trigger each skill.
+
+Ask: *"Want me to drop a quick 'How to use these skills' guide into the repo? It'll list each installed skill, what it does, and how to invoke it."*
+
+If yes, create `.claude/skills/HOW_TO_USE.md` (or `<agent>/skills/HOW_TO_USE.md` for whichever agent path was used) with the following structure:
+
+```markdown
+# How to use these skills
+
+This project has [N] skills installed via /bootstrap-skills. Each one extends what the agent can do — some trigger automatically, others you invoke explicitly.
+
+## Installed skills
+
+### [skill-name]
+**What it does:** [one-line summary from the skill's description]
+**How to trigger:** [slash command if applicable, e.g. `/grill-me` — or natural-language phrases that activate it, e.g. "say 'grill me' or 'stress-test this plan'"]
+**When to use it:** [one-line guidance on the moment in your workflow when this helps]
+
+[repeat per skill]
+
+## Tips
+- Skills with a slash command (e.g. `/tdd`) are explicit — type the command to run them.
+- Skills without one trigger automatically when the agent recognizes the task from the description.
+- Re-run `/bootstrap-skills` anytime to add more skills as the project grows.
+```
+
+To populate each entry accurately:
+1. Read each installed skill's `SKILL.md` frontmatter (name, description).
+2. Extract the trigger phrases from the description (the "Use when..." phrases tell you the natural-language triggers).
+3. Check if the skill is invoked as a slash command in its body — most are; if so, the command is `/<skill-name>`.
+4. Keep each entry to 3 short lines. Don't pad. The user can read the full SKILL.md if they want more.
+
+After writing the file, tell the user where it landed and suggest they commit it alongside the skills so the team has the same reference.
+
 ## Search strategy
 
-For each section the user opts into, search skills.sh and **verify install counts before recommending**. Default trust in CLI ordering is wrong — the CLI does not necessarily return results ranked by installs.
+For each section the user opts into, search skills.sh and **verify install counts before recommending**.
 
-**Two-step process, do both:**
+**Search with bare topic terms, not verbose phrases.** Skills are usually named for what they *are* (e.g. `vercel-react-best-practices`), not what they do (e.g. "react component design"). A bare-topic search (`react`, `tdd`, `postgres`) lets the platform's install-count ranking surface the popular skill, rather than fighting it with over-specified queries.
 
-1. **Run the search to get candidates.** Use `npx skills find <keywords>`. Take the top ~5 results, not just the first.
-2. **Verify install counts and reputation on skills.sh.** For each candidate, fetch its skills.sh page (e.g. `https://www.skills.sh/<owner>/<repo>/<skill>`) or run a web search like `site:skills.sh <skill-name>` to see the actual install count, GitHub stars, and source. CLI output alone is not enough.
+**Three-step process:**
 
-Only after both steps, pick a winner. If a candidate looks promising but you can't verify its metrics, say so to the user rather than guessing.
+1. **Run a bare-topic search.** Use `npx skills find <topic>` with the shortest meaningful term — `react`, not `react components`. Take the top ~5 results.
+2. **Verify install counts on skills.sh.** For each candidate, fetch its skills.sh page (e.g. `https://www.skills.sh/<owner>/<repo>/<skill>`) or web-search `site:skills.sh <skill-name>` to see install count, GitHub stars, and source. CLI output alone is not enough.
+3. **Sanity-check if your pick is small.** If the candidate you'd recommend has fewer than 10K installs, run a broader search (an even shorter term, or just the bare topic by itself) and scan for a skill with at least 10x more installs that still fits. Often there's a popular skill the narrow search missed.
 
-**Sanity check — known popular sources.** Before finalizing, ask yourself: is there a well-known skill from a reputable source that the CLI didn't surface? For example: Matt Pocock's `mattpocock/skills` (engineering & productivity, ~84k stars), Anthropic's official skills, Vercel Labs' `vercel-labs/skills` and `vercel-labs/agent-skills`, framework-team skills (Angular, Next.js, etc.). If the top CLI result has 41 installs and you haven't checked these known sources, **check them explicitly**. A search like `npx skills find mattpocock tdd` or fetching `https://www.skills.sh/mattpocock/skills/tdd` will surface the popular alternative.
+Only after all three steps, pick a winner. If a candidate looks promising but you can't verify its metrics, say so to the user rather than guessing.
 
-Suggested query templates (refine based on the user's actual answers):
+**Suggested bare-topic queries** (these are starting points; refine based on the user's actual answer):
 
-| Section | Pick | Search keywords | Known popular source to check |
-|---|---|---|---|
-| Working style | Plan before coding | `grill plan design interview` | `mattpocock/skills/grill-me` |
-| Working style | Compressed responses | `compressed terse minimal tokens` | `mattpocock/skills/caveman` |
-| Working style | Disciplined testing | `tdd red green refactor` | `mattpocock/skills/tdd` |
-| Working style | Disciplined debugging | `debug diagnosis loop bug` | `mattpocock/skills/diagnose` |
-| Frontend | React | `react component design` | `anthropics/skills/frontend-design`, `vercel-labs/agent-skills` |
-| Frontend | Vue | `vue component` | — |
-| Frontend | Svelte | `svelte` | — |
-| Frontend | Generic UI | `frontend design accessibility` | `anthropics/skills/frontend-design` |
-| Backend | Node/TS API | `express fastify node api` | `vercel-labs/agent-skills` |
-| Backend | Python API | `fastapi django python api` | — |
-| Backend | Rust | `rust axum api` | — |
-| Data | Postgres | `postgres sql schema` | — |
-| Data | Mongo | `mongo document` | — |
-| Data | Redis | `redis cache` | — |
-| Ops | Docker | `docker container` | — |
-| Ops | CI | `github actions ci` | — |
-| Ops | Vercel | `vercel deployment` | `vercel-labs/agent-skills` |
+| Section | Pick | Bare topic to search |
+|---|---|---|
+| Working style | Plan before coding | `grill` |
+| Working style | Compressed responses | `caveman` or `compressed` |
+| Working style | Disciplined testing | `tdd` |
+| Working style | Disciplined debugging | `debug` or `diagnose` |
+| Frontend | React | `react` |
+| Frontend | Vue | `vue` |
+| Frontend | Svelte | `svelte` |
+| Frontend | Generic UI | `frontend` |
+| Backend | Node/TS API | `node` or `express` |
+| Backend | Python API | `python` or `fastapi` |
+| Backend | Rust | `rust` |
+| Data | Postgres | `postgres` |
+| Data | Mongo | `mongo` |
+| Data | Redis | `redis` |
+| Ops | Docker | `docker` |
+| Ops | CI | `ci` or `github actions` |
+| Ops | Vercel | `vercel` |
 
-Treat these as starting points. If the user said something specific ("we use Drizzle"), search for that directly. The "known popular source" column is a backstop, not a prescription — verify the metrics, and only pick it if it actually fits and ranks well.
+If the user said something specific ("we use Drizzle"), search for that directly with the bare term (`drizzle`).
 
 ## Ranking
 
 After you have **verified install counts and stars** for the top candidates (not just the CLI output), score them:
 
-1. **Install count** — primary signal. >10k installs is strong; 1k-10k is solid; 100-1k is plausible; <100 is weak and needs a strong secondary signal.
-2. **GitHub stars on the source repo** — secondary signal. A skill in a 50k-star repo from a known author beats an unknown 100-install standalone.
+1. **Install count** — primary signal. >100K installs is dominant; 10K-100K is strong; 1K-10K is solid; 100-1K is plausible; <100 is weak.
+2. **GitHub stars on the source repo** — secondary signal. A skill in a 50K-star repo from a known author beats an unknown 100-install standalone.
 3. **Source reputation** — official authors (Anthropic, Vercel Labs, framework teams) get a boost.
 4. **Recency** — skills updated in the last 6 months beat stale ones, all else equal.
 5. **Description fit** — does the skill description actually match what we want, or is it tangentially related? A weak fit with high installs is worse than a strong fit with moderate installs.
 
 Pick the top-ranked candidate per category. Don't install multiple skills for the same job — one well-chosen skill per concern.
 
-**Hard rule:** If the top candidate has fewer than 100 installs **and** you haven't checked the "known popular source" column for that category, go check before recommending. Don't ship a 41-install pick when a 30k-install alternative exists one search away.
+**Hard rule — sanity check on low picks.** If the top candidate has fewer than 10K installs, run the broader sanity search from Step 3 above before recommending. Don't ship a 2.6K-install pick when a 400K-install alternative exists one broader search away.
 
-If after checking, the top candidate still has fewer than 100 installs and no clear reputational signal, flag it: *"The best match for [category] is new and unproven ([N] installs). Install anyway, skip it, or want me to look at alternatives?"*
+If after sanity-checking, the top candidate still has fewer than 100 installs and no clear reputational signal, flag it: *"The best match for [category] is new and unproven ([N] installs). Install anyway, skip it, or want me to look at alternatives?"*
 
 ## Notes for Claude running this skill
 
-- **The interview is the product.** Don't pad it. A user with a clear project should be done in under 2 minutes.
+- **The interview is the product.** Don't pad it. A user with a clear project should be done in under 2 minutes (excluding any "anything else?" rounds the user chooses to extend).
 - **Show your work on rankings.** When picking between candidates, briefly say why (e.g. "Picked X over Y because 30k vs 800 installs and X is from the framework team").
 - **Respect existing installs.** Before installing, run `npx skills list` to see what's already there. Don't reinstall, don't override user-edited skills without asking.
 - **Project-scoped only.** All `npx skills add` commands run without `-g`. Skills land in `./.claude/skills/` and are committable with the project.
-- **One-off discovery is fine mid-interview.** If the user asks "is there a skill for X" mid-flow, run a quick `npx skills find` for that, answer briefly, then resume the interview where you left off. No need to defer to other tools.
+- **Loop "anything else?" until the user opts out.** Don't ask once and move on — keep offering until they say they're done.
+- **Always offer the usage guide.** After install, ask if the user wants a HOW_TO_USE.md generated. It's a small step that makes the installed skills discoverable to the team.
+- **One-off discovery is fine mid-interview.** If the user asks "is there a skill for X" mid-flow, run a quick `npx skills find` for that, answer briefly, then resume the interview where you left off.
 - **When in doubt, skip the install.** Recommending a skill the user adds manually is fine; installing a wrong skill that pollutes `.claude/skills/` is annoying. Lean conservative.
 
 ## Example session (illustrative)
@@ -192,9 +240,17 @@ Claude: Anything specific you want skills for that I didn't cover?
 
 User: Yes — Drizzle migrations specifically.
 
-Claude: [searches skills.sh for "drizzle migrations"]
-        Found one — [top drizzle migration skill] (N installs).
-        Adding it to the list.
+Claude: [searches skills.sh for "drizzle"]
+        Found one — [top drizzle skill] (N installs).
+        Adding it to the list. Anything else, or are we good?
+
+User: Also writing ADRs.
+
+Claude: [searches skills.sh for "adr"]
+        Found [top ADR skill] (M installs). Adding.
+        Anything else, or are we good?
+
+User: That's all.
 
 Claude: Here's the plan — all installed into ./.claude/skills/:
         - [top "grill" skill] — plan before coding
@@ -202,10 +258,23 @@ Claude: Here's the plan — all installed into ./.claude/skills/:
         - [top frontend-design skill] — Next.js/Tailwind UI
         - [top nextjs skill] — Next.js best practices
         - [top postgres skill] — Drizzle + Postgres schema patterns
+        - [top drizzle skill] — Drizzle migrations
+        - [top ADR skill] — ADR authoring
 
         Confirm to install?
 
 User: Confirm.
+
+Claude: [runs npx skills add for each without -g, reports results]
+        Done — 7 skills installed.
+        Want me to drop a quick 'How to use these skills' guide
+        into the repo?
+
+User: Yes.
+
+Claude: [reads each SKILL.md, writes .claude/skills/HOW_TO_USE.md]
+        Wrote HOW_TO_USE.md. Commit it alongside the skills so
+        the team has the same reference.
 
 Claude: [runs npx skills add for each without -g, reports results]
 ```
