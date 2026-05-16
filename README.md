@@ -18,7 +18,7 @@ All skills install into the project's local skills folder (the path depends on t
 ## Install
 
 ```bash
-npx skills add <your-username>/bootstrap-skills
+npx skills add jhrodriguesit/bootstrap-skills
 ```
 
 Then in your agent (Claude Code, Codex, OpenCode, etc.):
