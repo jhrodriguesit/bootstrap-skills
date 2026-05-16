@@ -1,8 +1,10 @@
 # bootstrap-skills
 
-A Claude Code skill that runs a short structured interview about your project, then installs the best-matching skills from [skills.sh](https://www.skills.sh) ranked by install count, stars, and source reputation.
+An agent skill that runs a short structured interview about your project, then installs the best-matching skills from [skills.sh](https://www.skills.sh) ranked by install count, stars, and source reputation.
 
-All skills install into the project's local `./.claude/skills/` folder so they're committable alongside the project.
+Works across any agent that supports the SKILL.md standard — Claude Code, Codex, OpenCode, Cursor, Gemini CLI, GitHub Copilot, and others.
+
+All skills install into the project's local skills folder (the path depends on the agent — `./.claude/skills/` for Claude Code, `./.codex/skills/` for Codex, etc.) so they're committable alongside the project.
 
 ## What it does
 
@@ -16,10 +18,10 @@ All skills install into the project's local `./.claude/skills/` folder so they'r
 ## Install
 
 ```bash
-npx skills add jhrodriguesit/bootstrap-skills
+npx skills add <your-username>/bootstrap-skills
 ```
 
-Then in Claude Code:
+Then in your agent (Claude Code, Codex, OpenCode, etc.):
 
 ```
 /bootstrap-skills
