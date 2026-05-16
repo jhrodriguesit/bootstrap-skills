@@ -16,7 +16,7 @@ All skills install into the project's local `./.claude/skills/` folder so they'r
 ## Install
 
 ```bash
-npx skills add <your-username>/bootstrap-skills
+npx skills add jhrodriguesit/bootstrap-skills
 ```
 
 Then in Claude Code:
