@@ -29,13 +29,13 @@ All skills install into the project's local skills folder — `./.claude/skills/
 npx skills add jhrodriguesit/bootstrap-skills
 ```
 
-Then in your agent (Claude Code, Codex, OpenCode, etc.):
-
-For claude code you can run:
+For claude code:
 
 ```bash
 npx skills add jhrodriguesit/bootstrap-skills --agent claude-code 
 ```
+
+Then in your agent (Claude Code, Codex, OpenCode, etc.):
 
 ```
 /bootstrap-skills
